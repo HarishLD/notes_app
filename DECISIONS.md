@@ -96,6 +96,14 @@ Add an entry the moment you make a choice — not at the end of the phase. This 
 **Why:** `prisma.config.ts` is Prisma 7's canonical config location and already declares the seed command; `create-next-app`/`prisma init` had also written the old `package.json#prisma.seed` key, and Prisma 7 warns when both are present. Removed the redundant one.
 **Alternative:** Keeping both doesn't break anything today but is exactly the kind of thing a reviewer asks "why is this here twice?" about.
 
+## `vitest.config.ts` renamed to `vitest.config.mts`
+**Why:** The config uses `export default` (ESM), but `package.json` has no `"type": "module"`. Vite's native config loader warned about ESM syntax in a file it was loading as CommonJS, and — more importantly — `resolve.alias` silently failed to apply under that ambiguity, so the `@` alias didn't resolve at all. The `.mts` extension is unambiguous ESM, and fixed alias resolution.
+**Alternative:** Adding `"type": "module"` to `package.json` would fix it too but changes how every other `.js` file in the project is interpreted — too broad a change for a config-loading quirk.
+
+## `signinSchema.email` validated and normalized the same as `signupSchema.email`
+**Why:** `requirements.md` only spells out "presence only, no strength rule" for signin's *password*, contrasting it with signup's 8-character minimum — it says nothing that overrides email's format check. Since `User.email` is stored lowercased, signin's email needs the same trim+lowercase normalization as signup just to look up the right row; treating format validation the same way keeps both schemas consistent instead of inventing a weaker rule for signin.
+**Alternative:** Accepting any non-empty string for signin's email and letting an unrecognized format fall through to "wrong credentials" would also avoid an information leak, but it's an unstated assumption in the other direction, and duplicates trim/lowercase logic in the service layer instead of the schema.
+
 ## Multi-tag filter semantics: AND / OR — DECIDE IN PHASE 10
 **Why:**
 **Alternative:**
