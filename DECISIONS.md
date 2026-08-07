@@ -104,6 +104,18 @@ Add an entry the moment you make a choice — not at the end of the phase. This 
 **Why:** `requirements.md` only spells out "presence only, no strength rule" for signin's *password*, contrasting it with signup's 8-character minimum — it says nothing that overrides email's format check. Since `User.email` is stored lowercased, signin's email needs the same trim+lowercase normalization as signup just to look up the right row; treating format validation the same way keeps both schemas consistent instead of inventing a weaker rule for signin.
 **Alternative:** Accepting any non-empty string for signin's email and letting an unrecognized format fall through to "wrong credentials" would also avoid an information leak, but it's an unstated assumption in the other direction, and duplicates trim/lowercase logic in the service layer instead of the schema.
 
+## Added `lib/auth/service.ts` so `session.ts` never imports Prisma directly
+**Why:** `requirements.md` has `getCurrentUser()`/`requireUser()` load the user from the DB, but `CLAUDE.md` §2 restricts Prisma imports to `lib/**/service.ts` and `lib/prisma.ts` — `session.ts` matches neither. Rather than widen the layering rule with a named exception, added a one-function `lib/auth/service.ts` (`findSessionUser`) that `session.ts` calls instead. The rule stays literally true and there's exactly one place, per module, that ever touches `prisma.user`.
+**Alternative:** Amending CLAUDE.md's allowed-importer list to name `session.ts` explicitly — fewer files, but leaves a named exception to remember instead of a rule with no exceptions.
+
+## `test/setup.ts` loads `.env` via `dotenv/config`; Vitest doesn't do this itself
+**Why:** `lib/auth/jwt.ts` throws at module load if `JWT_SECRET` is missing, per CLAUDE.md §6. Vitest doesn't read `.env` files into `process.env` automatically (confirmed: a smoke test importing nothing but reading `process.env.JWT_SECRET` came back `undefined`), so every test run would fail at the first import of `jwt.ts` without this. Wired via `test.setupFiles` in `vitest.config.mts`, using the already-installed `dotenv` package.
+**Alternative:** Exporting the secret as a `vitest.config.mts` `define` value would work but hardcodes a secret-shaped value into build config instead of reading `process.env` like every other consumer.
+
+## `lib/auth/service.ts` and `session.ts`'s `getCurrentUser`/`requireUser` have no dedicated Phase 3 tests
+**Why:** `requirements.md`'s Phase 3 test checklist only lists hashing and token-signing tests — session reading isn't in it, and for good reason: `getCurrentUser`/`requireUser` call `cookies()` from `next/headers`, which only works inside a Next.js request scope, not a bare Vitest test. `findSessionUser` could be tested with a raw Prisma call, but CLAUDE.md §10 requires a **separate test database**, which doesn't exist yet — only one `DATABASE_URL` is configured, pointing at the Neon dev/seed database from Phase 1. Testing against it now would violate "never the dev database." Both get real coverage once Phase 4's API-level tests exercise them through actual route handlers, and once a test database exists.
+**Alternative:** Standing up a second Neon database and `test/factories.ts` now would let these get tested immediately, but that's Phase 6 in `requirements.md`'s own sequencing — pulling it forward wasn't asked for.
+
 ## Multi-tag filter semantics: AND / OR — DECIDE IN PHASE 10
 **Why:**
 **Alternative:**
