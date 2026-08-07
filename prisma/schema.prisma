@@ -11,3 +11,46 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  notes        Note[]
+  tags         Tag[]
+}
+
+model Note {
+  id        String     @id @default(cuid())
+  title     String
+  body      String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  noteTags  NoteTag[]
+
+  @@index([userId, createdAt])
+}
+
+model Tag {
+  id       String    @id @default(cuid())
+  name     String
+  userId   String
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  noteTags NoteTag[]
+
+  @@unique([userId, name])
+}
+
+// Explicit join model (not Prisma's implicit many-to-many) so the join table
+// is directly queryable in tests and visible as documentation of the relationship.
+model NoteTag {
+  noteId String
+  tagId  String
+  note   Note   @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([noteId, tagId])
+}

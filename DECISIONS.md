@@ -72,6 +72,30 @@ Add an entry the moment you make a choice — not at the end of the phase. This 
 
 <!-- Add entries below as you build. Every choice you would have to justify. -->
 
+## Neon driver adapter (`@prisma/adapter-neon`) instead of a URL-based datasource
+**Why:** Prisma 7's `prisma-client` generator is engine-less and requires an explicit driver adapter. Neon's serverless driver talks HTTP/WebSocket instead of opening a raw TCP socket, which is what a Vercel serverless function needs — a normal `pg` connection would exhaust Neon's connection limit under concurrent invocations. `lib/prisma.ts` builds the adapter from `DATABASE_URL` (the pooled string); `DIRECT_URL` is only used by `prisma.config.ts` for migrations.
+**Alternative:** A plain `postgresql://` URL on the datasource works locally but is the wrong shape for a serverless deployment target.
+
+## No `ws` package added for the Neon adapter
+**Why:** `@neondatabase/serverless` needs a WebSocket constructor for transactions; Node 22+ (this project runs on Node 26) exposes a global `WebSocket`, so `neonConfig.webSocketConstructor` doesn't need to be set. Adding `ws` would be a new dependency for something the runtime already provides.
+**Alternative:** Setting `neonConfig.webSocketConstructor = ws` is the documented pattern for older Node versions, but it's an unnecessary dependency here.
+
+## Seed script re-hashes and reuses `lib/prisma.ts`, doesn't call `lib/auth/password.ts`
+**Why:** Phase 1 has no auth module yet — `hashPassword` doesn't exist until Phase 3. The seed script hashes with `bcryptjs` at cost 12 directly, matching the auth rule in `CLAUDE.md` §6, and imports the same `prisma` singleton the app uses rather than constructing a second client.
+**Alternative:** Duplicating a second Prisma client construction in the seed script would drift from the app's connection setup.
+
+## Seed idempotency via delete-then-recreate per user, not upsert-per-note
+**Why:** `User` and `Tag` have natural unique keys (`email`, `[userId, name]`) so they upsert cleanly. `Note` has none — titles aren't unique. Running the seed twice deletes each seed user's existing notes and tags (cascading their join rows) and rebuilds them, which is simpler than diffing content and still leaves the `User` row and its `id` untouched.
+**Alternative:** Upserting notes by title would work but adds a fake uniqueness constraint to the schema for a seed-only concern.
+
+## `.env.example` created in this phase, not deferred to Phase 0
+**Why:** CLAUDE.md §1.4 is a non-negotiable: every env key must be documented in `.env.example`. It didn't exist yet, and this phase introduces two new keys (`SEED_REVIEWER_EMAIL`, `SEED_REVIEWER_PASSWORD`), so leaving it missing would mean shipping undocumented secrets configuration. Filled in with all keys used so far: `DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET` (used starting Phase 3, documented now since the rule doesn't say to wait), `SEED_REVIEWER_EMAIL`, `SEED_REVIEWER_PASSWORD`.
+**Alternative:** Waiting for Phase 0 to be revisited would leave a known rule violation on the books in the meantime.
+
+## Legacy `"prisma"` key removed from `package.json`
+**Why:** `prisma.config.ts` is Prisma 7's canonical config location and already declares the seed command; `create-next-app`/`prisma init` had also written the old `package.json#prisma.seed` key, and Prisma 7 warns when both are present. Removed the redundant one.
+**Alternative:** Keeping both doesn't break anything today but is exactly the kind of thing a reviewer asks "why is this here twice?" about.
+
 ## Multi-tag filter semantics: AND / OR — DECIDE IN PHASE 10
 **Why:**
 **Alternative:**
