@@ -107,6 +107,7 @@ describe("noteQuerySchema", () => {
     const result = noteQuerySchema.safeParse({ sort: "oldest" });
 
     expect(result.success).toBe(true);
+    if (!result.success) throw new Error("expected success");
     expect(result.data.sort).toBe("oldest");
   });
 
@@ -114,6 +115,7 @@ describe("noteQuerySchema", () => {
     const result = noteQuerySchema.safeParse({ tags: "id1, id2,id3" });
 
     expect(result.success).toBe(true);
+    if (!result.success) throw new Error("expected success");
     expect(result.data.tags).toEqual(["id1", "id2", "id3"]);
   });
 
@@ -121,6 +123,7 @@ describe("noteQuerySchema", () => {
     const result = noteQuerySchema.safeParse({});
 
     expect(result.success).toBe(true);
+    if (!result.success) throw new Error("expected success");
     expect(result.data.tags).toBeUndefined();
   });
 
@@ -128,6 +131,7 @@ describe("noteQuerySchema", () => {
     const result = noteQuerySchema.safeParse({ q: "meeting notes" });
 
     expect(result.success).toBe(true);
+    if (!result.success) throw new Error("expected success");
     expect(result.data.q).toBe("meeting notes");
   });
 
