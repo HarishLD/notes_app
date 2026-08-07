@@ -14,7 +14,12 @@ describe("signSessionToken / verifySessionToken", () => {
 
   it("throws UnauthorizedError for a tampered token", async () => {
     const token = await signSessionToken("user-123");
-    const tampered = `${token.slice(0, -1)}${token.endsWith("a") ? "b" : "a"}`;
+    // Flip a character in the payload segment, not the last character of the
+    // signature — the last base64url character only encodes padding bits,
+    // so some edits there decode to the same bytes and don't actually tamper anything.
+    const middle = Math.floor(token.length / 2);
+    const flipped = token[middle] === "a" ? "b" : "a";
+    const tampered = token.slice(0, middle) + flipped + token.slice(middle + 1);
 
     await expect(verifySessionToken(tampered)).rejects.toThrow(UnauthorizedError);
   });
