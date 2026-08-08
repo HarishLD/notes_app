@@ -3,6 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { NotFoundError } from "@/lib/errors";
 import { createTestNote, createTestTag, createTestUser } from "@/test/factories";
 import { createNote, deleteNote, getNote, listNotes, updateNote } from "@/lib/notes/service";
+import { setNoteTags } from "@/lib/tags/service";
+
+// Small delay so notes created back-to-back get distinct createdAt values —
+// otherwise sort-order assertions are flaky against Postgres's millisecond
+// timestamp resolution.
+function tick(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 10));
+}
 
 describe("listNotes", () => {
   it("returns only the caller's notes", async () => {
@@ -26,6 +34,115 @@ describe("listNotes", () => {
     const notes = await listNotes(user.id, { sort: "newest" });
 
     expect(notes[0].tags).toEqual([expect.objectContaining({ id: tag.id, name: "work" })]);
+  });
+});
+
+describe("listNotes filtering, sorting, search", () => {
+  it("filters by one tag, returning only notes carrying it", async () => {
+    const user = await createTestUser();
+    const tag = await createTestTag(user.id);
+    const tagged = await createTestNote(user.id, { title: "Tagged" });
+    await createTestNote(user.id, { title: "Untagged" });
+    await setNoteTags(user.id, tagged.id, [tag.id]);
+
+    const notes = await listNotes(user.id, { sort: "newest", tagIds: [tag.id] });
+
+    expect(notes).toHaveLength(1);
+    expect(notes[0].id).toBe(tagged.id);
+  });
+
+  it("filters by two tags using AND semantics — a note must carry every selected tag", async () => {
+    const user = await createTestUser();
+    const tagA = await createTestTag(user.id);
+    const tagB = await createTestTag(user.id);
+    const bothTags = await createTestNote(user.id, { title: "Both" });
+    const onlyA = await createTestNote(user.id, { title: "Only A" });
+    await setNoteTags(user.id, bothTags.id, [tagA.id, tagB.id]);
+    await setNoteTags(user.id, onlyA.id, [tagA.id]);
+
+    const notes = await listNotes(user.id, { sort: "newest", tagIds: [tagA.id, tagB.id] });
+
+    expect(notes).toHaveLength(1);
+    expect(notes[0].id).toBe(bothTags.id);
+  });
+
+  it("returns no results when filtering by a tag id that isn't the caller's own", async () => {
+    const user = await createTestUser();
+    const otherUser = await createTestUser();
+    const foreignTag = await createTestTag(otherUser.id);
+    await createTestNote(user.id, { title: "My note" });
+
+    const notes = await listNotes(user.id, { sort: "newest", tagIds: [foreignTag.id] });
+
+    expect(notes).toHaveLength(0);
+  });
+
+  it("sort newest and oldest return opposite orders", async () => {
+    const user = await createTestUser();
+    const first = await createTestNote(user.id, { title: "First" });
+    await tick();
+    const second = await createTestNote(user.id, { title: "Second" });
+
+    const newest = await listNotes(user.id, { sort: "newest" });
+    const oldest = await listNotes(user.id, { sort: "oldest" });
+
+    expect(newest.map((note) => note.id)).toEqual([second.id, first.id]);
+    expect(oldest.map((note) => note.id)).toEqual([first.id, second.id]);
+  });
+
+  it("search matches case-insensitively and on partial titles", async () => {
+    const user = await createTestUser();
+    const meeting = await createTestNote(user.id, { title: "Meeting Notes" });
+    await createTestNote(user.id, { title: "Grocery List" });
+
+    const notes = await listNotes(user.id, { sort: "newest", q: "MEET" });
+
+    expect(notes).toHaveLength(1);
+    expect(notes[0].id).toBe(meeting.id);
+  });
+
+  it("search does not match on body content", async () => {
+    const user = await createTestUser();
+    await createTestNote(user.id, { title: "Groceries", body: "Buy milk for the meeting" });
+
+    const notes = await listNotes(user.id, { sort: "newest", q: "meeting" });
+
+    expect(notes).toHaveLength(0);
+  });
+
+  it("composes a tag filter, search, and sort in one request", async () => {
+    const user = await createTestUser();
+    const tag = await createTestTag(user.id);
+    const older = await createTestNote(user.id, { title: "Meeting one" });
+    await tick();
+    const newer = await createTestNote(user.id, { title: "Meeting two" });
+    const untaggedMatch = await createTestNote(user.id, { title: "Meeting three" });
+    await setNoteTags(user.id, older.id, [tag.id]);
+    await setNoteTags(user.id, newer.id, [tag.id]);
+    void untaggedMatch; // matches the search but not the tag filter — must be excluded
+
+    const notes = await listNotes(user.id, { sort: "newest", q: "meeting", tagIds: [tag.id] });
+
+    expect(notes.map((note) => note.id)).toEqual([newer.id, older.id]);
+  });
+
+  it("never leaks another user's notes when both users apply the same filter", async () => {
+    const userA = await createTestUser();
+    const userB = await createTestUser();
+    const tagA = await createTestTag(userA.id, { name: "work" });
+    const tagB = await createTestTag(userB.id, { name: "work" });
+    const noteA = await createTestNote(userA.id, { title: "Meeting notes" });
+    const noteB = await createTestNote(userB.id, { title: "Meeting notes" });
+    await setNoteTags(userA.id, noteA.id, [tagA.id]);
+    await setNoteTags(userB.id, noteB.id, [tagB.id]);
+
+    const notesA = await listNotes(userA.id, { sort: "newest", q: "meeting", tagIds: [tagA.id] });
+    const notesB = await listNotes(userB.id, { sort: "newest", q: "meeting", tagIds: [tagB.id] });
+
+    expect(notesA).toHaveLength(1);
+    expect(notesA[0].id).toBe(noteA.id);
+    expect(notesB).toHaveLength(1);
+    expect(notesB[0].id).toBe(noteB.id);
   });
 });
 

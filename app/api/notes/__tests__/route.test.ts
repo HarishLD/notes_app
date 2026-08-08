@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
 import { createTestNote, createTestTag, createTestUser } from "@/test/factories";
 import { authenticatedRequest, type NextRequestInit } from "@/test/request";
+import { setNoteTags } from "@/lib/tags/service";
 import { GET, POST } from "../route";
 
 function jsonInit(method: string, body: unknown): NextRequestInit {
@@ -34,6 +35,35 @@ describe("GET /api/notes", () => {
     expect(res.status).toBe(200);
     expect(body).toHaveLength(1);
     expect(body[0].title).toBe("A's note");
+  });
+
+  it("wires the tags, q, and sort query params through to listNotes", async () => {
+    const user = await createTestUser();
+    const tag = await createTestTag(user.id);
+    const match = await createTestNote(user.id, { title: "Meeting notes" });
+    const nonMatch = await createTestNote(user.id, { title: "Meeting notes" });
+    await setNoteTags(user.id, match.id, [tag.id]);
+    void nonMatch; // same title, no tag — must be excluded by the tag filter
+
+    const req = await authenticatedRequest(
+      user.id,
+      `http://localhost/api/notes?tags=${tag.id}&q=meeting&sort=oldest`,
+    );
+    const res = await GET(req);
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body).toHaveLength(1);
+    expect(body[0].id).toBe(match.id);
+  });
+
+  it("returns 400 for an unknown sort value in the query string", async () => {
+    const user = await createTestUser();
+    const req = await authenticatedRequest(user.id, "http://localhost/api/notes?sort=bogus");
+
+    const res = await GET(req);
+
+    expect(res.status).toBe(400);
   });
 });
 
