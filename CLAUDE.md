@@ -286,7 +286,7 @@ Prisma error codes, constraint names, table or column names, stack traces, raw e
 - Derive types rather than restating them: `z.infer<typeof schema>` for inputs, Prisma's generated types for rows.
 - Function signatures carry explicit return types. Let inference handle locals.
 - Prefer `type` for object shapes, `interface` only when declaration merging is needed.
-- No default exports except where Next.js requires one (`page.tsx`, `layout.tsx`, `error.tsx`, `proxy.ts`).
+- No default exports except where Next.js requires one (`page.tsx`, `layout.tsx`, `error.tsx`). `proxy.ts` uses a named export — see §7.
 - No barrel `index.ts` re-export files. Import from the real path.
 
 ---
