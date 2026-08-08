@@ -181,6 +181,22 @@ Add an entry the moment you make a choice — not at the end of the phase. This 
 **Why:** The obvious way to assert "the note is gone" — `prisma.note.findUnique(...)` — is a direct Prisma import inside a file colocated under `app/api/notes/[id]/__tests__/`, which trips CLAUDE.md's literal `grep -rn "prisma\." app` check (no test-file exception stated). Rather than carve out an unstated exception, verified the same behavior through the API's own public surface: after `DELETE` returns `204`, a follow-up `GET` for the same id returns `404`. This is arguably the more correct test anyway — CLAUDE.md §10 says to "test through the public surface: exported service functions, exported route handlers," and a route handler test reaching into Prisma directly was always a bit of a layering shortcut.
 **Alternative:** Scoping the grep check to exclude `__tests__/` directories would also resolve the conflict, but changes a rule to fit one inconvenient test rather than finding a test that already fits the rule.
 
+## Edit is inline, not a modal
+**Why:** `requirements.md` leaves this as an explicit choice. Inline editing (the card swaps its display view for `<NoteForm>` in place) needs no focus-trap, no Escape-to-close, no return-focus-to-trigger handling — all real requirements the moment a modal is chosen, per the same phase's own text. Fewer moving parts, same result: the user edits the note and sees it saved in place.
+**Alternative:** A modal is arguably more conventional, but every one of its accessibility requirements is a real implementation burden inline editing doesn't have. Revisit only if a reviewer specifically wants to see modal-focus-trap code.
+
+## Delete confirmation is an inline two-step toggle, not a modal or `window.confirm()`
+**Why:** `requirements.md` asks for "a confirmation step," not a dialog. `window.confirm()` is unstyled, blocks the main thread, and can't be unit-tested or restyled for dark mode. An inline toggle (Delete → Confirm delete? / Cancel) is real `<button>` elements, fully keyboard-operable, and needs no focus-trap since nothing steals focus from the page.
+**Alternative:** A modal confirmation is more visually prominent but re-introduces the same focus-trap/Escape/return-focus burden the inline-edit decision above avoided, for a lower-stakes action than edit.
+
+## `app/notes/page.tsx` catches `UnauthorizedError` and redirects to `/login`, instead of letting it reach `error.tsx`
+**Why:** `proxy.ts`'s check is cookie-presence only (CLAUDE.md §6) — a forged or expired cookie can still reach this page, where `requireUser()` is the authoritative check and throws. Left uncaught, that throw would surface as a generic `error.tsx` screen ("Something went wrong") for what is really just "please sign in again," which is both a worse experience and arguably not an honest error state. Catching specifically `UnauthorizedError` (not a blanket catch) and redirecting is a legitimate outcome-conversion per CLAUDE.md §4.2, and keeps `error.tsx` for genuinely unexpected failures (e.g., `listNotes` hitting a DB problem).
+**Alternative:** Doing nothing and letting it hit `error.tsx` would technically satisfy "errors surface as readable messages," but conflates "you're not signed in" with "something broke," which are different problems with different correct next actions.
+
+## `lib/api/client-error.ts` extracted from `login-form.tsx`/`signup-form.tsx`, which were then refactored to use it
+**Why:** Phase 8 needed the identical `{ error?, fields? }` response-parsing pattern for the create and edit forms — a 3rd and 4th copy of what Phase 5 had already written twice. Extracted to `lib/api/client-error.ts` (client-safe: no Prisma, no `process.env` reads) and pointed all four forms at it instead of leaving two duplicate local definitions alongside two new ones.
+**Alternative:** Leaving Phase 5's forms with their own copies while only the new Phase 8 forms use the shared helper would mean the same four lines of logic exist in the codebase in two different forms for no reason — worth fixing once noticed, not worth leaving as "not this phase's problem."
+
 ## Multi-tag filter semantics: AND / OR — DECIDE IN PHASE 10
 **Why:**
 **Alternative:**
