@@ -1,10 +1,18 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import jsxA11y from "eslint-plugin-jsx-a11y";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  // eslint-config-next's core-web-vitals bundles only a handful of
+  // jsx-a11y rules (alt-text, aria-props, ...) — 6, not the full
+  // recommended set. CLAUDE.md §0/§11 asks for the recommended ruleset
+  // specifically. nextVitals already registers the jsx-a11y plugin, so
+  // only the rules are added here — redeclaring `plugins` errors on a
+  // duplicate registration.
+  { rules: jsxA11y.flatConfigs.recommended.rules },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
