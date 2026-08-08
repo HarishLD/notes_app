@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
 import { createTestNote, createTestUser } from "@/test/factories";
-import { authenticatedRequest } from "@/test/request";
+import { authenticatedRequest, type NextRequestInit } from "@/test/request";
 import { GET, POST } from "../route";
 
-function jsonInit(method: string, body: unknown): RequestInit {
+function jsonInit(method: string, body: unknown): NextRequestInit {
   return {
     method,
     headers: { "content-type": "application/json" },

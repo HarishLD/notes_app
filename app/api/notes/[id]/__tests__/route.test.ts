@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { createTestNote, createTestUser } from "@/test/factories";
 import { authenticatedRequest } from "@/test/request";
 import { DELETE, GET, PATCH } from "../route";
@@ -133,7 +132,13 @@ describe("DELETE /api/notes/[id]", () => {
     const res = await DELETE(req, ctxFor(note.id));
 
     expect(res.status).toBe(204);
-    const gone = await prisma.note.findUnique({ where: { id: note.id } });
-    expect(gone).toBeNull();
+
+    // Verify through the public surface (a follow-up GET), not a direct
+    // Prisma query — route handler tests stay at the API level, and
+    // "app/**/*.ts never imports prisma" (CLAUDE.md §2) holds literally,
+    // including in colocated tests.
+    const getReq = await authenticatedRequest(user.id, `http://localhost/api/notes/${note.id}`);
+    const getRes = await GET(getReq, ctxFor(note.id));
+    expect(getRes.status).toBe(404);
   });
 });
