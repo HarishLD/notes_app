@@ -1,24 +1,22 @@
-type FormFieldProps = {
+type FormTextareaProps = {
   id: string;
   name: string;
   label: string;
-  type?: string;
-  autoComplete?: string;
   defaultValue?: string;
+  rows?: number;
   disabled?: boolean;
   errors?: string[];
 };
 
-export function FormField({
+export function FormTextarea({
   id,
   name,
   label,
-  type = "text",
-  autoComplete,
   defaultValue,
+  rows = 4,
   disabled,
   errors,
-}: FormFieldProps): React.JSX.Element {
+}: FormTextareaProps): React.JSX.Element {
   const errorId = `${id}-error`;
   const errorMessage = errors && errors.length > 0 ? errors.join(" ") : undefined;
 
@@ -27,11 +25,10 @@ export function FormField({
       <label htmlFor={id} className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
         {label}
       </label>
-      <input
+      <textarea
         id={id}
         name={name}
-        type={type}
-        autoComplete={autoComplete}
+        rows={rows}
         defaultValue={defaultValue}
         disabled={disabled}
         aria-invalid={errorMessage !== undefined || undefined}

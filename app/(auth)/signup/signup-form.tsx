@@ -5,15 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { FormField } from "@/components/ui/form-field";
 import { FormError } from "@/components/ui/form-error";
-
-type ErrorBody = {
-  error?: string;
-  fields?: Record<string, string[]>;
-};
-
-function isErrorBody(value: unknown): value is ErrorBody {
-  return typeof value === "object" && value !== null;
-}
+import { isClientErrorBody } from "@/lib/api/client-error";
 
 export function SignupForm(): React.JSX.Element {
   const router = useRouter();
@@ -45,7 +37,7 @@ export function SignupForm(): React.JSX.Element {
       }
 
       const body: unknown = await res.json();
-      if (isErrorBody(body)) {
+      if (isClientErrorBody(body)) {
         setFieldErrors(body.fields ?? {});
         setFormError(body.error ?? "Something went wrong");
       } else {
