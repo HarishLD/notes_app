@@ -35,22 +35,27 @@ export function TagSelect({
     setIsCreating(true);
     setCreateError(null);
 
-    const res = await fetch("/api/tags", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name }),
-    });
+    try {
+      const res = await fetch("/api/tags", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
 
-    if (res.ok) {
-      const tag: Tag = await res.json();
-      setTags((prev) => [...prev, tag]);
-      selectedIds.add(tag.id);
-      setNewTagName("");
-    } else {
-      const body: unknown = await res.json();
-      setCreateError(isClientErrorBody(body) ? (body.error ?? "Couldn't create tag") : "Couldn't create tag");
+      if (res.ok) {
+        const tag: Tag = await res.json();
+        setTags((prev) => [...prev, tag]);
+        selectedIds.add(tag.id);
+        setNewTagName("");
+      } else {
+        const body: unknown = await res.json();
+        setCreateError(isClientErrorBody(body) ? (body.error ?? "Couldn't create tag") : "Couldn't create tag");
+      }
+    } catch {
+      setCreateError("Couldn't create tag. Check your connection and try again.");
+    } finally {
+      setIsCreating(false);
     }
-    setIsCreating(false);
   }
 
   return (

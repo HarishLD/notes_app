@@ -23,20 +23,24 @@ export function CreateNoteForm({ availableTags }: CreateNoteFormProps): React.JS
     body: string;
     tagIds: string[];
   }): Promise<NoteFormResult> {
-    const res = await fetch("/api/notes", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ title, body, tagIds }),
-    });
+    try {
+      const res = await fetch("/api/notes", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ title, body, tagIds }),
+      });
 
-    if (res.ok) {
-      setIsOpen(false);
-      router.refresh();
-      return { ok: true };
+      if (res.ok) {
+        setIsOpen(false);
+        router.refresh();
+        return { ok: true };
+      }
+
+      const errorBody: unknown = await res.json();
+      return { ok: false, ...(isClientErrorBody(errorBody) ? errorBody : {}) };
+    } catch {
+      return { ok: false, error: "Something went wrong. Check your connection and try again." };
     }
-
-    const errorBody: unknown = await res.json();
-    return { ok: false, ...(isClientErrorBody(errorBody) ? errorBody : {}) };
   }
 
   if (!isOpen) {

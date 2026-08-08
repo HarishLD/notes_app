@@ -54,14 +54,21 @@ export async function getCurrentUser(request?: Request): Promise<SessionUser | n
   if (!token) {
     return null;
   }
-  // Any failure here — bad token, deleted user — means "no session", not an
-  // error worth distinguishing to the caller.
+  let sub: string;
   try {
-    const { sub } = await verifySessionToken(token);
-    return await findSessionUser(sub);
+    // Bad signature, malformed token, expired — genuinely "no session",
+    // not an error worth distinguishing to the caller.
+    ({ sub } = await verifySessionToken(token));
   } catch {
     return null;
   }
+  // Deliberately not wrapped in the try/catch above: a deleted user is
+  // findSessionUser resolving to null (Prisma returns null, it doesn't
+  // throw), which is still "no session." A database outage is a different
+  // failure entirely and must not be swallowed the same way — that would
+  // silently redirect a signed-in user to /login instead of surfacing the
+  // real error (Phase 11 audit: caught by manually breaking DATABASE_URL).
+  return await findSessionUser(sub);
 }
 
 export async function requireUser(request?: Request): Promise<SessionUser> {

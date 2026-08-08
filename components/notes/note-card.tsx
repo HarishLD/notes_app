@@ -36,37 +36,46 @@ export function NoteCard({ note, availableTags }: NoteCardProps): React.JSX.Elem
     body: string;
     tagIds: string[];
   }): Promise<NoteFormResult> {
-    const res = await fetch(`/api/notes/${note.id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ title, body, tagIds }),
-    });
+    try {
+      const res = await fetch(`/api/notes/${note.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ title, body, tagIds }),
+      });
 
-    if (res.ok) {
-      setIsEditing(false);
-      router.refresh();
-      return { ok: true };
+      if (res.ok) {
+        setIsEditing(false);
+        router.refresh();
+        return { ok: true };
+      }
+
+      const errorBody: unknown = await res.json();
+      return { ok: false, ...(isClientErrorBody(errorBody) ? errorBody : {}) };
+    } catch {
+      return { ok: false, error: "Something went wrong. Check your connection and try again." };
     }
-
-    const errorBody: unknown = await res.json();
-    return { ok: false, ...(isClientErrorBody(errorBody) ? errorBody : {}) };
   }
 
   async function handleDelete(): Promise<void> {
     setIsDeleting(true);
     setDeleteError(null);
 
-    const res = await fetch(`/api/notes/${note.id}`, { method: "DELETE" });
+    try {
+      const res = await fetch(`/api/notes/${note.id}`, { method: "DELETE" });
 
-    if (res.ok) {
-      router.refresh();
-      return;
+      if (res.ok) {
+        router.refresh();
+        return;
+      }
+
+      const body: unknown = await res.json();
+      setDeleteError(isClientErrorBody(body) ? (body.error ?? "Something went wrong") : "Something went wrong");
+    } catch {
+      setDeleteError("Something went wrong. Check your connection and try again.");
+    } finally {
+      setIsDeleting(false);
+      setIsConfirmingDelete(false);
     }
-
-    const body: unknown = await res.json();
-    setDeleteError(isClientErrorBody(body) ? (body.error ?? "Something went wrong") : "Something went wrong");
-    setIsDeleting(false);
-    setIsConfirmingDelete(false);
   }
 
   if (isEditing) {
