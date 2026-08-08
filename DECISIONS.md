@@ -197,6 +197,30 @@ Add an entry the moment you make a choice — not at the end of the phase. This 
 **Why:** Phase 8 needed the identical `{ error?, fields? }` response-parsing pattern for the create and edit forms — a 3rd and 4th copy of what Phase 5 had already written twice. Extracted to `lib/api/client-error.ts` (client-safe: no Prisma, no `process.env` reads) and pointed all four forms at it instead of leaving two duplicate local definitions alongside two new ones.
 **Alternative:** Leaving Phase 5's forms with their own copies while only the new Phase 8 forms use the shared helper would mean the same four lines of logic exist in the codebase in two different forms for no reason — worth fixing once noticed, not worth leaving as "not this phase's problem."
 
+## Tag assignment folded into the existing note create/edit endpoints, not a separate route
+**Why:** Phase 9's Build section lists only `GET`/`POST /api/tags` (for the `Tag` entity itself) — no dedicated endpoint for note-tag association. `createNoteSchema`/`updateNoteSchema` gained an optional `tagIds` field instead; `POST /api/notes` and `PATCH /api/notes/[id]` call `setNoteTags` after the note operation when `tagIds` is present. Matches the UI shape too — one form, one submit, note and tags together — rather than the client making two requests for what's conceptually one edit.
+**Alternative:** A `PUT /api/notes/[id]/tags` endpoint would keep `setNoteTags` fully self-contained behind its own route, but nothing in `requirements.md` asks for it, and it would mean the note form making two sequential requests on every save.
+
+## `setNoteTags` returns `void`; the route handler re-reads via `getNote` for the response
+**Why:** Keeps `setNoteTags` doing exactly one thing (verify ownership, replace join rows) without also needing to know how to shape a `NoteWithTags` response — that's `lib/notes/service.ts`'s `getNote`, already built and tested in Phase 6. Reusing it here means the tag-attachment query logic exists in exactly one place, not duplicated across `lib/notes/service.ts` and `lib/tags/service.ts`.
+**Alternative:** Having `setNoteTags` return the updated note directly would save one query per request, but would require duplicating (or cross-importing in the other direction) the tag-include query shape that `getNote` already owns.
+
+## Note creation and tag attachment are not atomic across the two calls
+**Why:** `POST /api/notes` calls `createNote` then, separately, `setNoteTags` — each is its own transaction, not one spanning both. If a `tagId` in the request doesn't belong to the caller, the note has already been created by the time `setNoteTags` rejects it, so the response is `404` for what actually left a real (untagged) note in the database. This only happens on a malformed/adversarial direct API call — the UI's tag picker only ever offers tags the signed-in user already owns — and there's no cross-user leak either way, just a partial-success rough edge. `requirements.md` only asks `setNoteTags` itself to be transactional (verify both ownerships, write nothing on rejection), not for note-creation-with-tags as a whole to be one transaction — extending `createNote` to also validate and write tag joins would duplicate `setNoteTags`'s own ownership-checking logic in a second place.
+**Alternative:** Wrapping `createNote` and the tag joins in one shared transaction inside `lib/notes/service.ts` would close this gap, at the cost of notes/service.ts needing to know about tag ownership rules — logic Phase 9 puts in `lib/tags/service.ts` for a reason. Worth reconsidering if a reviewer flags the partial-success case as a real problem rather than an edge case.
+
+## Found and fixed a real bug: `createNote`/`updateNote` blindly spread their input into Prisma's `data`
+**Why:** Once `CreateNoteInput`/`UpdateNoteInput` gained an optional `tagIds` field, `prisma.note.create({ data: { ...data, userId } })` started throwing `PrismaClientValidationError: Unknown argument tagIds` at runtime — `tagIds` isn't a `Note` column. Caught by a regression test written before the fix (committed failing, showing the real Prisma error, not a hypothetical). Fixed by naming the fields explicitly (`{ title: data.title, body: data.body, userId }`) instead of spreading the whole validated object. Verified separately that `updateMany` with an empty `data: {}` (the tagIds-only-edit case) is a harmless no-op, not an error.
+**Alternative:** None — this was a straightforward bug once the schema changed shape; the fix is the obviously correct one.
+
+## Tag multi-select is native checkboxes, not a custom combobox
+**Why:** Each tag is an independently labeled `<input type="checkbox" name="tagIds">`, matching CLAUDE.md §11's bar (no custom interactive widget where a native element does the job) with zero extra ARIA work. Embedding it inside `NoteForm`'s existing `<form>` means `formData.getAll("tagIds")` on submit reads whatever's checked with no separate state-syncing between `TagSelect` and its parent.
+**Alternative:** A searchable multi-select dropdown scales better past a few dozen tags, but needs a full combobox/listbox ARIA pattern (CLAUDE.md's own accessibility bar) for a feature with no stated scale requirement.
+
+## `components/tags/tag-chip.tsx` extracted from inline JSX in `note-card.tsx`
+**Why:** CLAUDE.md's folder structure names `tag-chip` explicitly under `components/tags/`; it was inline JSX in `note-card.tsx` since Phase 8 (before any tag data existed to justify extracting it). Pulled out now that Phase 9 gives it real content and a second, defensible reason to exist as its own file — TagSelect's "add tag" flow and NoteCard's display both center on the same `Tag` shape.
+**Alternative:** Leaving it inline still works but ignores a file CLAUDE.md already named.
+
 ## Multi-tag filter semantics: AND / OR — DECIDE IN PHASE 10
 **Why:**
 **Alternative:**
