@@ -4,7 +4,9 @@ import { UnauthorizedError } from "@/lib/errors";
 import { verifySessionToken } from "@/lib/auth/jwt";
 import { findSessionUser, type SessionUser } from "@/lib/auth/service";
 
-const SESSION_COOKIE_NAME = "session";
+// Exported so proxy.ts's optimistic presence check reads the same name —
+// one source of truth for what the session cookie is called.
+export const SESSION_COOKIE_NAME = "session";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days, matches the JWT expiry
 
 // Cookies are set on the NextResponse being returned, not via next/headers's
