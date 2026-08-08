@@ -157,6 +157,10 @@ Add an entry the moment you make a choice — not at the end of the phase. This 
 **Why:** The sign-out control (`requirements.md` Phase 5: "a sign-out control in the app shell") needed a home before Phase 8 builds the actual notes app shell. Rather than always rendering it (visible even on `/login`/`/signup`, which is confusing since proxy.ts redirects signed-in users away from those paths anyway) or inventing a separate shell component ahead of when one is needed, the root layout now reads the session once and renders `<SignOutButton />` only when a user is present. This does make every route dynamic (verified in `next build` output — `/` moved from static to `ƒ`), which is unavoidable once any shared layout reads cookies.
 **Alternative:** A client-side check (fetch current user on mount) would avoid the server-side cookie read, but would flash the wrong header state on every load and duplicates work `getCurrentUser()` already does correctly.
 
+## `app/page.tsx` ("/") redirects straight to `/notes` instead of showing content
+**Why:** `proxy.ts`'s matcher is deliberately scoped to `/notes`, `/login`, `/signup` only, per `requirements.md` — widening it to cover `/` would mean the protection logic runs on every single route in the app, not just the three that need it. Left alone, `/` kept rendering the untouched `create-next-app` placeholder in production, so visitors had to already know to type `/notes`. A `redirect("/notes")` server-side in the page itself (not proxy) sends every visit to `/` through the existing `/notes` protection: signed out → `/login`, signed in → `/notes` (or further to `/login` again until Phase 8 builds the actual notes page). Verified the full chain with curl: `/` → `/notes` → `/login`, landing on a real `200`.
+**Alternative:** Adding `/` to proxy's matcher and giving it its own branch would work too, but duplicates the "protected path" redirect logic that `/notes` already has, instead of reusing it for free by redirecting into `/notes`.
+
 ## Multi-tag filter semantics: AND / OR — DECIDE IN PHASE 10
 **Why:**
 **Alternative:**
