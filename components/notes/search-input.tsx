@@ -1,0 +1,40 @@
+"use client";
+
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useState, type FormEvent } from "react";
+import { withUpdatedParam } from "@/components/notes/url-params";
+
+export function SearchInput(): React.JSX.Element {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [value, setValue] = useState(searchParams.get("q") ?? "");
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>): void {
+    event.preventDefault();
+    const qs = withUpdatedParam(searchParams, "q", value.trim() || null);
+    router.push(qs ? `${pathname}?${qs}` : pathname);
+  }
+
+  return (
+    <form onSubmit={handleSubmit} role="search" className="flex items-center gap-2">
+      <label htmlFor="notes-search" className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+        Search
+      </label>
+      <input
+        id="notes-search"
+        type="search"
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        placeholder="Search by title"
+        className="rounded border border-zinc-300 px-2 py-1 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:ring-zinc-100"
+      />
+      <button
+        type="submit"
+        className="rounded border border-zinc-300 px-2 py-1 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900"
+      >
+        Search
+      </button>
+    </form>
+  );
+}
