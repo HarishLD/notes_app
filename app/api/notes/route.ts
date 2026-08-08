@@ -10,7 +10,7 @@ export const GET = route(async (req: Request) => {
   const user = await requireUser(req);
   const url = new URL(req.url);
   const query = parse(noteQuerySchema, Object.fromEntries(url.searchParams));
-  const notes = await listNotes(user.id, { sort: query.sort, q: query.q });
+  const notes = await listNotes(user.id, { sort: query.sort, q: query.q, tagIds: query.tags });
   return NextResponse.json(notes, { status: 200 });
 });
 

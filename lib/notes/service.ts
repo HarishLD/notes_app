@@ -5,10 +5,11 @@ import type { Note, Tag } from "@/lib/generated/prisma/client";
 
 export type NoteWithTags = Note & { tags: Tag[] };
 
-// Tag filtering (tagIds, AND/OR semantics) lands in Phase 10 once that
-// choice is made and tested — see DECISIONS.md. Deriving sort/q from the
-// same Zod-inferred type keeps this in sync with the query schema.
-export type ListNotesOptions = Pick<NoteQueryInput, "sort" | "q">;
+// tagIds isn't Picked from NoteQueryInput — that type calls the same
+// concept "tags" (the query-string param name), and requirements.md's
+// Build section for this function calls it "tagIds"; kept both spellings
+// rather than force one to match the other for no functional reason.
+export type ListNotesOptions = Pick<NoteQueryInput, "sort" | "q"> & { tagIds?: string[] };
 
 const WITH_TAGS = {
   noteTags: { include: { tag: true } },
@@ -26,6 +27,13 @@ export async function listNotes(userId: string, options: ListNotesOptions): Prom
     where: {
       userId,
       ...(options.q ? { title: { contains: options.q, mode: "insensitive" as const } } : {}),
+      // AND semantics: one `some` check per selected tag, combined with
+      // AND — the note must have a join row for tag A *and* a (possibly
+      // different) join row for tag B, not one row matching both at once
+      // (impossible; each NoteTag row has exactly one tagId).
+      ...(options.tagIds && options.tagIds.length > 0
+        ? { AND: options.tagIds.map((tagId) => ({ noteTags: { some: { tagId } } })) }
+        : {}),
     },
     orderBy: { createdAt: options.sort === "oldest" ? "asc" : "desc" },
     include: WITH_TAGS,
