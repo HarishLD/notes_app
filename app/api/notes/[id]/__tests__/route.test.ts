@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
-import { createTestNote, createTestUser } from "@/test/factories";
+import { createTestNote, createTestTag, createTestUser } from "@/test/factories";
 import { authenticatedRequest } from "@/test/request";
 import { DELETE, GET, PATCH } from "../route";
 
@@ -97,6 +97,40 @@ describe("PATCH /api/notes/[id]", () => {
 
     expect(res.status).toBe(200);
     expect(body.title).toBe("Updated");
+  });
+
+  it("updates the note's tags when tagIds is provided", async () => {
+    const user = await createTestUser();
+    const note = await createTestNote(user.id);
+    const tag = await createTestTag(user.id);
+
+    const req = await authenticatedRequest(user.id, `http://localhost/api/notes/${note.id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ tagIds: [tag.id] }),
+    });
+    const res = await PATCH(req, ctxFor(note.id));
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.tags).toHaveLength(1);
+    expect(body.tags[0].id).toBe(tag.id);
+  });
+
+  it("returns 404 when a tagId belongs to another user", async () => {
+    const user = await createTestUser();
+    const otherUser = await createTestUser();
+    const note = await createTestNote(user.id);
+    const foreignTag = await createTestTag(otherUser.id);
+
+    const req = await authenticatedRequest(user.id, `http://localhost/api/notes/${note.id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ tagIds: [foreignTag.id] }),
+    });
+    const res = await PATCH(req, ctxFor(note.id));
+
+    expect(res.status).toBe(404);
   });
 });
 

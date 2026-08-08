@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
-import { createTestNote, createTestUser } from "@/test/factories";
+import { createTestNote, createTestTag, createTestUser } from "@/test/factories";
 import { authenticatedRequest, type NextRequestInit } from "@/test/request";
 import { GET, POST } from "../route";
 
@@ -86,5 +86,37 @@ describe("POST /api/notes", () => {
     expect(res.status).toBe(201);
     expect(body.title).toBe("New note");
     expect(body.userId).toBe(user.id);
+  });
+
+  it("creates a note with tags when tagIds is provided", async () => {
+    const user = await createTestUser();
+    const tag = await createTestTag(user.id);
+    const req = await authenticatedRequest(
+      user.id,
+      "http://localhost/api/notes",
+      jsonInit("POST", { title: "Tagged note", body: "", tagIds: [tag.id] }),
+    );
+
+    const res = await POST(req);
+    const body = await res.json();
+
+    expect(res.status).toBe(201);
+    expect(body.tags).toHaveLength(1);
+    expect(body.tags[0].id).toBe(tag.id);
+  });
+
+  it("returns 404 when a tagId belongs to another user", async () => {
+    const user = await createTestUser();
+    const otherUser = await createTestUser();
+    const foreignTag = await createTestTag(otherUser.id);
+    const req = await authenticatedRequest(
+      user.id,
+      "http://localhost/api/notes",
+      jsonInit("POST", { title: "Note", body: "", tagIds: [foreignTag.id] }),
+    );
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(404);
   });
 });

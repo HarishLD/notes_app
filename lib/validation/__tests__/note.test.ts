@@ -59,6 +59,22 @@ describe("createNoteSchema", () => {
 
     expect(result.success).toBe(false);
   });
+
+  it("accepts an optional tagIds array", () => {
+    const result = createNoteSchema.safeParse({ title: "Title", body: "", tagIds: ["tag1", "tag2"] });
+
+    expect(result.success).toBe(true);
+    if (!result.success) throw new Error("expected success");
+    expect(result.data.tagIds).toEqual(["tag1", "tag2"]);
+  });
+
+  it("leaves tagIds undefined when absent", () => {
+    const result = createNoteSchema.safeParse({ title: "Title", body: "" });
+
+    expect(result.success).toBe(true);
+    if (!result.success) throw new Error("expected success");
+    expect(result.data.tagIds).toBeUndefined();
+  });
 });
 
 describe("updateNoteSchema", () => {
@@ -86,6 +102,14 @@ describe("updateNoteSchema", () => {
     const result = updateNoteSchema.safeParse({ title: "   " });
 
     expect(result.success).toBe(false);
+  });
+
+  it("passes an object with only tagIds", () => {
+    const result = updateNoteSchema.safeParse({ tagIds: ["tag1"] });
+
+    expect(result.success).toBe(true);
+    if (!result.success) throw new Error("expected success");
+    expect(result.data.tagIds).toEqual(["tag1"]);
   });
 });
 

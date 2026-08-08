@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { prisma } from "@/lib/prisma";
 import { NotFoundError } from "@/lib/errors";
-import { createTestNote, createTestUser } from "@/test/factories";
+import { createTestNote, createTestTag, createTestUser } from "@/test/factories";
 import { createNote, deleteNote, getNote, listNotes, updateNote } from "@/lib/notes/service";
 
 describe("listNotes", () => {
@@ -70,6 +70,21 @@ describe("createNote", () => {
 
     expect(note.tags).toEqual([]);
   });
+
+  it("ignores a tagIds field on the input instead of passing it to Prisma", async () => {
+    // createNoteSchema/updateNoteSchema's inferred type carries an optional
+    // tagIds field (Phase 9) that isn't a Note column — tag assignment goes
+    // through lib/tags/service.ts's setNoteTags, called separately by the
+    // route handler. createNote must not blindly spread its whole input
+    // into prisma.note.create's data, or this throws a Prisma validation
+    // error at runtime.
+    const user = await createTestUser();
+    const tag = await createTestTag(user.id);
+
+    const note = await createNote(user.id, { title: "Title", body: "Body", tagIds: [tag.id] });
+
+    expect(note.title).toBe("Title");
+  });
 });
 
 describe("updateNote", () => {
@@ -89,6 +104,16 @@ describe("updateNote", () => {
     const note = await createTestNote(user.id, { title: "Original" });
 
     const updated = await updateNote(user.id, note.id, { title: "Updated" });
+
+    expect(updated.title).toBe("Updated");
+  });
+
+  it("ignores a tagIds field on the input instead of passing it to Prisma", async () => {
+    const user = await createTestUser();
+    const note = await createTestNote(user.id, { title: "Original" });
+    const tag = await createTestTag(user.id);
+
+    const updated = await updateNote(user.id, note.id, { title: "Updated", tagIds: [tag.id] });
 
     expect(updated.title).toBe("Updated");
   });
