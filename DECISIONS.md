@@ -141,6 +141,22 @@ Add an entry the moment you make a choice — not at the end of the phase. This 
 **Why:** CLAUDE.md's `parse<T>` example passes `result.error.flatten().fieldErrors` straight into `new ValidationError(...)`. Under `--strict` with a generic `T`, that doesn't typecheck: zod types each field as `string[] | undefined`, and with `T` unresolved, `Object.entries()` on it degrades further to untyped values — but `ValidationError` requires `Record<string, string[]>` with no undefined values. Rebuilt into a clean object, dropping the (never actually present) undefined entries.
 **Alternative:** An `as Record<string, string[]>` cast at the call site would also compile, but silently assumes zod never emits an empty array for a field, which the rebuild doesn't need to assume.
 
+## `proxy.ts` uses a named `export function proxy(...)`, not a default export
+**Why:** CLAUDE.md §7 and §9 disagree with each other — §7 says "the exported function is named proxy," §9 lists `proxy.ts` among files needing a default export. Checked Next 16's own source (`next/dist/server/next-server.js`) rather than guess: it resolves the handler as `middlewareModule.proxy || middlewareModule.middleware || middlewareModule` — a named `proxy` export is checked first, matching the old `middleware.ts` convention of a named export. Went with §7 as the more specific, directly-on-point instruction; §9's inclusion of `proxy.ts` looks like a copy-paste leftover from the general default-export list.
+**Alternative:** A default export would also work (the `|| middlewareModule` fallback), but wouldn't match CLAUDE.md's own explicit statement about this specific file.
+
+## `SESSION_COOKIE_NAME` exported from `session.ts` for `proxy.ts` to import
+**Why:** `proxy.ts` needs to check for the same cookie `session.ts` sets, without a second hardcoded `"session"` string that could drift out of sync if the cookie name ever changed.
+**Alternative:** Duplicating the literal in `proxy.ts` — one string, low actual risk, but no reason to accept it when exporting a constant costs nothing.
+
+## `components/auth/` added alongside the `ui/notes/tags` folders CLAUDE.md enumerates
+**Why:** `sign-out-button.tsx` is domain-specific (knows the `/api/auth/signout` endpoint and the `/login` redirect) and used from the shared root layout — not a one-off tied to a single page, so it didn't fit colocating with a page the way `login-form.tsx`/`signup-form.tsx` do, and it doesn't fit `components/ui/`'s explicit "generic, no domain knowledge" definition either. `login-form.tsx` and `signup-form.tsx` themselves stay colocated with their pages (`app/(auth)/login/`, `app/(auth)/signup/`) since each is used in exactly one place — matching CLAUDE.md §7's "keep `use client` at the leaves."
+**Alternative:** Forcing `sign-out-button.tsx` into `components/ui/` would misdescribe it as generic; putting it in `app/` directly (uncolocated with any single page, since it's used from the layout) would bury a reusable piece as if it were page-local.
+
+## Root layout became an async Server Component that calls `getCurrentUser()`
+**Why:** The sign-out control (`requirements.md` Phase 5: "a sign-out control in the app shell") needed a home before Phase 8 builds the actual notes app shell. Rather than always rendering it (visible even on `/login`/`/signup`, which is confusing since proxy.ts redirects signed-in users away from those paths anyway) or inventing a separate shell component ahead of when one is needed, the root layout now reads the session once and renders `<SignOutButton />` only when a user is present. This does make every route dynamic (verified in `next build` output — `/` moved from static to `ƒ`), which is unavoidable once any shared layout reads cookies.
+**Alternative:** A client-side check (fetch current user on mount) would avoid the server-side cookie read, but would flash the wrong header state on every load and duplicates work `getCurrentUser()` already does correctly.
+
 ## Multi-tag filter semantics: AND / OR — DECIDE IN PHASE 10
 **Why:**
 **Alternative:**
