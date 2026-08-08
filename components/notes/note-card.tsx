@@ -3,11 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { NoteForm, type NoteFormResult } from "@/components/notes/note-form";
+import { TagChip } from "@/components/tags/tag-chip";
 import { isClientErrorBody } from "@/lib/api/client-error";
 import type { NoteWithTags } from "@/lib/notes/service";
+import type { Tag } from "@/lib/generated/prisma/client";
 
 type NoteCardProps = {
   note: NoteWithTags;
+  availableTags: Tag[];
 };
 
 function excerpt(body: string, maxLength = 160): string {
@@ -17,18 +20,26 @@ function excerpt(body: string, maxLength = 160): string {
   return `${body.slice(0, maxLength).trimEnd()}…`;
 }
 
-export function NoteCard({ note }: NoteCardProps): React.JSX.Element {
+export function NoteCard({ note, availableTags }: NoteCardProps): React.JSX.Element {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  async function handleEdit({ title, body }: { title: string; body: string }): Promise<NoteFormResult> {
+  async function handleEdit({
+    title,
+    body,
+    tagIds,
+  }: {
+    title: string;
+    body: string;
+    tagIds: string[];
+  }): Promise<NoteFormResult> {
     const res = await fetch(`/api/notes/${note.id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ title, body }),
+      body: JSON.stringify({ title, body, tagIds }),
     });
 
     if (res.ok) {
@@ -65,6 +76,8 @@ export function NoteCard({ note }: NoteCardProps): React.JSX.Element {
           formId={`edit-note-${note.id}`}
           initialTitle={note.title}
           initialBody={note.body}
+          initialTagIds={note.tags.map((tag) => tag.id)}
+          availableTags={availableTags}
           submitLabel="Save"
           pendingLabel="Saving…"
           onCancel={() => setIsEditing(false)}
@@ -84,11 +97,8 @@ export function NoteCard({ note }: NoteCardProps): React.JSX.Element {
       {note.tags.length > 0 ? (
         <ul className="mt-2 flex flex-wrap gap-1">
           {note.tags.map((tag) => (
-            <li
-              key={tag.id}
-              className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
-            >
-              {tag.name}
+            <li key={tag.id}>
+              <TagChip name={tag.name} />
             </li>
           ))}
         </ul>

@@ -4,6 +4,8 @@ import { useState, type FormEvent } from "react";
 import { FormField } from "@/components/ui/form-field";
 import { FormTextarea } from "@/components/ui/form-textarea";
 import { FormError } from "@/components/ui/form-error";
+import { TagSelect } from "@/components/tags/tag-select";
+import type { Tag } from "@/lib/generated/prisma/client";
 
 export type NoteFormResult = { ok: true } | { ok: false; fields?: Record<string, string[]>; error?: string };
 
@@ -13,9 +15,11 @@ type NoteFormProps = {
   formId: string;
   initialTitle?: string;
   initialBody?: string;
+  initialTagIds?: string[];
+  availableTags: Tag[];
   submitLabel: string;
   pendingLabel: string;
-  onSubmit: (data: { title: string; body: string }) => Promise<NoteFormResult>;
+  onSubmit: (data: { title: string; body: string; tagIds: string[] }) => Promise<NoteFormResult>;
   onCancel?: () => void;
 };
 
@@ -23,6 +27,8 @@ export function NoteForm({
   formId,
   initialTitle = "",
   initialBody = "",
+  initialTagIds,
+  availableTags,
   submitLabel,
   pendingLabel,
   onSubmit,
@@ -41,8 +47,9 @@ export function NoteForm({
     const formData = new FormData(event.currentTarget);
     const title = String(formData.get("title") ?? "");
     const body = String(formData.get("body") ?? "");
+    const tagIds = formData.getAll("tagIds").map(String);
 
-    const result = await onSubmit({ title, body });
+    const result = await onSubmit({ title, body, tagIds });
 
     // On success the parent is responsible for hiding this form (closing
     // the create toggle, exiting edit mode) and calling router.refresh() —
@@ -71,6 +78,12 @@ export function NoteForm({
         defaultValue={initialBody}
         disabled={isPending}
         errors={fieldErrors.body}
+      />
+      <TagSelect
+        formId={formId}
+        initialTags={availableTags}
+        initialSelectedTagIds={initialTagIds}
+        disabled={isPending}
       />
       <FormError message={formError} />
       <div className="flex gap-2">

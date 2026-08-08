@@ -4,16 +4,29 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { NoteForm, type NoteFormResult } from "@/components/notes/note-form";
 import { isClientErrorBody } from "@/lib/api/client-error";
+import type { Tag } from "@/lib/generated/prisma/client";
 
-export function CreateNoteForm(): React.JSX.Element {
+type CreateNoteFormProps = {
+  availableTags: Tag[];
+};
+
+export function CreateNoteForm({ availableTags }: CreateNoteFormProps): React.JSX.Element {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
 
-  async function handleCreate({ title, body }: { title: string; body: string }): Promise<NoteFormResult> {
+  async function handleCreate({
+    title,
+    body,
+    tagIds,
+  }: {
+    title: string;
+    body: string;
+    tagIds: string[];
+  }): Promise<NoteFormResult> {
     const res = await fetch("/api/notes", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ title, body }),
+      body: JSON.stringify({ title, body, tagIds }),
     });
 
     if (res.ok) {
@@ -41,6 +54,7 @@ export function CreateNoteForm(): React.JSX.Element {
   return (
     <NoteForm
       formId="create-note"
+      availableTags={availableTags}
       submitLabel="Create note"
       pendingLabel="Creating…"
       onCancel={() => setIsOpen(false)}
