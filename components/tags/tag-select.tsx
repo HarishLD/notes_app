@@ -79,7 +79,7 @@ export function TagSelect({
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-zinc-500 dark:text-zinc-500">No tags yet.</p>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">No tags yet.</p>
       )}
       <div className="flex items-center gap-2">
         <label htmlFor={`${formId}-new-tag`} className="sr-only">

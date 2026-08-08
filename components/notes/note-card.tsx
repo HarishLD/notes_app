@@ -100,7 +100,7 @@ export function NoteCard({ note, availableTags }: NoteCardProps): React.JSX.Elem
     <li className="rounded border border-zinc-200 p-4 dark:border-zinc-800">
       <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{note.title}</h2>
       <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{excerpt(note.body)}</p>
-      <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-500">
+      <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
         {new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(new Date(note.createdAt))}
       </p>
       {note.tags.length > 0 ? (

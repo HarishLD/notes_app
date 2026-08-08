@@ -7,6 +7,7 @@ type FormFieldProps = {
   defaultValue?: string;
   disabled?: boolean;
   errors?: string[];
+  inputRef?: React.Ref<HTMLInputElement>;
 };
 
 export function FormField({
@@ -18,6 +19,7 @@ export function FormField({
   defaultValue,
   disabled,
   errors,
+  inputRef,
 }: FormFieldProps): React.JSX.Element {
   const errorId = `${id}-error`;
   const errorMessage = errors && errors.length > 0 ? errors.join(" ") : undefined;
@@ -28,6 +30,7 @@ export function FormField({
         {label}
       </label>
       <input
+        ref={inputRef}
         id={id}
         name={name}
         type={type}

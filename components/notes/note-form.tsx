@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { FormField } from "@/components/ui/form-field";
 import { FormTextarea } from "@/components/ui/form-textarea";
 import { FormError } from "@/components/ui/form-error";
@@ -37,6 +37,17 @@ export function NoteForm({
   const [isPending, setIsPending] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [formError, setFormError] = useState<string | null>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  // This form replaces static content when it appears (a button toggling
+  // into the create form, a note card swapping into edit mode) — move
+  // keyboard focus into it instead of leaving it wherever the trigger used
+  // to be. Imperative, not the autoFocus prop: jsx-a11y/no-autofocus flags
+  // that prop unconditionally, with no way to distinguish this case (focus
+  // following a deliberate user action) from focus stealing on page load.
+  useEffect(() => {
+    titleInputRef.current?.focus();
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -70,6 +81,7 @@ export function NoteForm({
         defaultValue={initialTitle}
         disabled={isPending}
         errors={fieldErrors.title}
+        inputRef={titleInputRef}
       />
       <FormTextarea
         id={`${formId}-body`}

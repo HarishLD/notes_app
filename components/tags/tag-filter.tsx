@@ -47,7 +47,7 @@ export function TagFilter({ tags }: TagFilterProps): React.JSX.Element {
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-zinc-500 dark:text-zinc-500">No tags yet.</p>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">No tags yet.</p>
       )}
     </fieldset>
   );
