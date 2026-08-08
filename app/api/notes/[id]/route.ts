@@ -4,6 +4,7 @@ import { parse, parseJson } from "@/lib/api/responses";
 import { requireUser } from "@/lib/auth/session";
 import { updateNoteSchema } from "@/lib/validation/note";
 import { deleteNote, getNote, updateNote } from "@/lib/notes/service";
+import { setNoteTags } from "@/lib/tags/service";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -19,7 +20,18 @@ export const PATCH = route<RouteContext>(async (req: Request, ctx: RouteContext)
   const body = await parseJson(req);
   const data = parse(updateNoteSchema, body);
   const { id } = await ctx.params;
-  const note = await updateNote(user.id, id, data);
+
+  // Both calls independently verify ownership and throw NotFoundError —
+  // redundant when both run, necessary when only one does (e.g. tagIds-only
+  // edit, no title/body change).
+  if (data.title !== undefined || data.body !== undefined) {
+    await updateNote(user.id, id, data);
+  }
+  if (data.tagIds !== undefined) {
+    await setNoteTags(user.id, id, data.tagIds);
+  }
+
+  const note = await getNote(user.id, id);
   return NextResponse.json(note, { status: 200 });
 });
 

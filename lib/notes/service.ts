@@ -45,8 +45,11 @@ export async function getNote(userId: string, noteId: string): Promise<NoteWithT
 }
 
 export async function createNote(userId: string, data: CreateNoteInput): Promise<NoteWithTags> {
+  // Named fields, not a blind ...data spread — CreateNoteInput carries an
+  // optional tagIds (Phase 9) that isn't a Note column. Tag assignment
+  // goes through lib/tags/service.ts's setNoteTags, called separately.
   const note = await prisma.note.create({
-    data: { ...data, userId },
+    data: { title: data.title, body: data.body, userId },
     include: WITH_TAGS,
   });
   return toNoteWithTags(note);
@@ -54,10 +57,14 @@ export async function createNote(userId: string, data: CreateNoteInput): Promise
 
 export async function updateNote(userId: string, noteId: string, data: UpdateNoteInput): Promise<NoteWithTags> {
   // Ownership lives in this where clause — a mismatched userId means zero
-  // rows match, never a row this function then has to check.
+  // rows match, never a row this function then has to check. Named fields
+  // for the same reason as createNote above — tagIds isn't a Note column.
   const result = await prisma.note.updateMany({
     where: { id: noteId, userId },
-    data,
+    data: {
+      ...(data.title !== undefined ? { title: data.title } : {}),
+      ...(data.body !== undefined ? { body: data.body } : {}),
+    },
   });
   if (result.count === 0) {
     throw new NotFoundError();
