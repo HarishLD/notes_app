@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import type { NextResponse } from "next/server";
+import type { NextRequest, NextResponse } from "next/server";
 import { UnauthorizedError } from "@/lib/errors";
 import { verifySessionToken } from "@/lib/auth/jwt";
 import { findSessionUser, type SessionUser } from "@/lib/auth/service";
@@ -28,12 +28,29 @@ export function clearSessionCookie(response: NextResponse): void {
   response.cookies.delete(SESSION_COOKIE_NAME);
 }
 
-// Server Components have no response object to attach a cookie to, so
-// reading still goes through next/headers's cookies() — that works fine
-// there because Next's real render pipeline always provides the request scope.
-export async function getCurrentUser(): Promise<SessionUser | null> {
+// Reading has the same request-scope problem writing did in Phase 4, but no
+// NextResponse-based trick applies here — there's nothing to attach a read
+// to. Route handlers always receive a genuine NextRequest at runtime (Next
+// guarantees this), even though lib/api/handler.ts's route() wrapper types
+// it as the more general Request — so a route handler can hand its req
+// straight to getCurrentUser/requireUser, and this is the one place that
+// narrows it back to NextRequest to read .cookies directly off the request.
+// That needs no AsyncLocalStorage, so it works identically whether Next's
+// server invoked the handler or a test constructed a NextRequest and called
+// the exported handler directly.
+async function readSessionToken(request?: Request): Promise<string | undefined> {
+  if (request) {
+    return (request as NextRequest).cookies.get(SESSION_COOKIE_NAME)?.value;
+  }
+  // Server Components have no request object to read from — next/headers's
+  // cookies() works fine there because Next's real render pipeline always
+  // provides the request scope it needs.
   const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  return cookieStore.get(SESSION_COOKIE_NAME)?.value;
+}
+
+export async function getCurrentUser(request?: Request): Promise<SessionUser | null> {
+  const token = await readSessionToken(request);
   if (!token) {
     return null;
   }
@@ -47,8 +64,8 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   }
 }
 
-export async function requireUser(): Promise<SessionUser> {
-  const user = await getCurrentUser();
+export async function requireUser(request?: Request): Promise<SessionUser> {
+  const user = await getCurrentUser(request);
   if (!user) {
     throw new UnauthorizedError();
   }
