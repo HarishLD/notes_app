@@ -39,7 +39,7 @@ export function FormField({
         disabled={disabled}
         aria-invalid={errorMessage !== undefined || undefined}
         aria-describedby={errorMessage !== undefined ? errorId : undefined}
-        className="rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:ring-zinc-100"
+        className="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 hover:border-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:border-zinc-600 dark:focus:border-indigo-400 dark:focus:ring-indigo-400 dark:disabled:hover:border-zinc-700"
       />
       {errorMessage !== undefined ? (
         <p id={errorId} className="text-sm text-red-600 dark:text-red-400">

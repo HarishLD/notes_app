@@ -1,12 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
   --foreground: #171717;
 }
 
 @theme inline {
-  --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -14,13 +12,15 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
     --foreground: #ededed;
   }
 }
 
+/* The canvas background (solid color + radial gradient) is applied via
+   Tailwind utility classes directly on <body> in app/layout.tsx, not here —
+   CLAUDE.md §12 is "Tailwind only." --background/--color-background were
+   dropped since nothing reads them once that moved. */
 body {
-  background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }

@@ -72,6 +72,7 @@ export function TagSelect({
                   value={tag.id}
                   defaultChecked={selectedIds.has(tag.id)}
                   disabled={disabled}
+                  className="accent-indigo-600"
                 />
                 {tag.name}
               </label>
@@ -92,13 +93,13 @@ export function TagSelect({
           onChange={(event) => setNewTagName(event.target.value)}
           disabled={disabled || isCreating}
           placeholder="New tag"
-          className="rounded border border-zinc-300 px-2 py-1 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:ring-zinc-100"
+          className="rounded-lg border border-zinc-300 px-2 py-1 text-sm text-zinc-900 hover:border-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:border-zinc-600 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
         />
         <button
           type="button"
           onClick={handleCreateTag}
           disabled={disabled || isCreating || newTagName.trim().length === 0}
-          className="rounded border border-zinc-300 px-2 py-1 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900"
+          className="rounded-lg border border-zinc-300 px-2 py-1 text-sm font-medium text-zinc-700 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-700"
         >
           {isCreating ? "Adding…" : "Add tag"}
         </button>

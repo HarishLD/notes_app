@@ -40,6 +40,7 @@ export function TagFilter({ tags }: TagFilterProps): React.JSX.Element {
                   type="checkbox"
                   checked={selectedIds.has(tag.id)}
                   onChange={(event) => handleToggle(tag.id, event.target.checked)}
+                  className="accent-indigo-600"
                 />
                 {tag.name}
               </label>

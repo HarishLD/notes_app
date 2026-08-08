@@ -80,7 +80,7 @@ export function NoteCard({ note, availableTags }: NoteCardProps): React.JSX.Elem
 
   if (isEditing) {
     return (
-      <li className="rounded border border-zinc-200 p-4 dark:border-zinc-800">
+      <li className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-800">
         <NoteForm
           formId={`edit-note-${note.id}`}
           initialTitle={note.title}
@@ -97,7 +97,7 @@ export function NoteCard({ note, availableTags }: NoteCardProps): React.JSX.Elem
   }
 
   return (
-    <li className="rounded border border-zinc-200 p-4 dark:border-zinc-800">
+    <li className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-800">
       <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{note.title}</h2>
       <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{excerpt(note.body)}</p>
       <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
@@ -116,7 +116,7 @@ export function NoteCard({ note, availableTags }: NoteCardProps): React.JSX.Elem
         <button
           type="button"
           onClick={() => setIsEditing(true)}
-          className="rounded border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900"
+          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-white disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-700"
         >
           Edit
         </button>
@@ -128,7 +128,7 @@ export function NoteCard({ note, availableTags }: NoteCardProps): React.JSX.Elem
               onClick={handleDelete}
               disabled={isDeleting}
               aria-busy={isDeleting}
-              className="rounded bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+              className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isDeleting ? "Deleting…" : "Confirm delete"}
             </button>
@@ -136,7 +136,7 @@ export function NoteCard({ note, availableTags }: NoteCardProps): React.JSX.Elem
               type="button"
               onClick={() => setIsConfirmingDelete(false)}
               disabled={isDeleting}
-              className="rounded border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900"
+              className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-white disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-700"
             >
               Cancel
             </button>
@@ -145,7 +145,7 @@ export function NoteCard({ note, availableTags }: NoteCardProps): React.JSX.Elem
           <button
             type="button"
             onClick={() => setIsConfirmingDelete(true)}
-            className="rounded border border-red-300 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
+            className="rounded-lg border border-red-300 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
           >
             Delete
           </button>

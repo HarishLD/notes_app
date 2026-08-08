@@ -51,17 +51,21 @@ export default async function NotesPage({ searchParams }: PageProps<"/notes">): 
   const hasActiveFilters = Boolean(query.tags && query.tags.length > 0) || Boolean(query.q);
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-10">
-      <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Notes</h1>
-      <CreateNoteForm availableTags={tags} />
-      <div className="flex flex-col gap-4 border-b border-zinc-200 pb-4 dark:border-zinc-800">
-        <div className="flex flex-wrap items-center gap-4">
-          <SearchInput />
-          <SortSelect />
+    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 py-10">
+      {/* Solid panel, not the gradient canvas — every piece of text below
+          needs an opaque surface under it. */}
+      <div className="flex flex-col gap-6 rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900 sm:p-8">
+        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Notes</h1>
+        <CreateNoteForm availableTags={tags} />
+        <div className="flex flex-col gap-4 border-b border-zinc-200 pb-6 dark:border-zinc-800">
+          <div className="flex flex-wrap items-center gap-4">
+            <SearchInput />
+            <SortSelect />
+          </div>
+          <TagFilter tags={tags} />
         </div>
-        <TagFilter tags={tags} />
+        <NoteList notes={notes} availableTags={tags} hasActiveFilters={hasActiveFilters} />
       </div>
-      <NoteList notes={notes} availableTags={tags} hasActiveFilters={hasActiveFilters} />
     </main>
   );
 }

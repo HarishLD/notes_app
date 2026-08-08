@@ -27,11 +27,11 @@ export function SearchInput(): React.JSX.Element {
         value={value}
         onChange={(event) => setValue(event.target.value)}
         placeholder="Search by title"
-        className="rounded border border-zinc-300 px-2 py-1 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:ring-zinc-100"
+        className="rounded-lg border border-zinc-300 px-2 py-1 text-sm text-zinc-900 hover:border-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:border-zinc-600 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
       />
       <button
         type="submit"
-        className="rounded border border-zinc-300 px-2 py-1 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900"
+        className="rounded-lg border border-zinc-300 px-2 py-1 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
       >
         Search
       </button>

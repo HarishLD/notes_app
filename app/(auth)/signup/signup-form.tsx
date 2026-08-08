@@ -75,13 +75,16 @@ export function SignupForm(): React.JSX.Element {
         type="submit"
         disabled={isPending}
         aria-busy={isPending}
-        className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+        className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isPending ? "Signing up…" : "Sign up"}
       </button>
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
         Already have an account?{" "}
-        <Link href="/login" className="font-medium text-zinc-900 underline dark:text-zinc-50">
+        <Link
+          href="/login"
+          className="font-medium text-indigo-600 underline hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+        >
           Log in
         </Link>
       </p>
