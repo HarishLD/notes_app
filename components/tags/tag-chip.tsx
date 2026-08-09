@@ -31,5 +31,8 @@ function hashTagName(name: string): number {
 
 export function TagChip({ name }: TagChipProps): React.JSX.Element {
   const colour = PALETTE[hashTagName(name) % PALETTE.length];
-  return <span className={`rounded-lg px-2 py-0.5 text-xs ${colour}`}>{name}</span>;
+  // Tags are stored lowercase (validation/tag.ts normalizes on write) —
+  // `capitalize` is purely a display transform, the underlying value never
+  // changes, so search/filter/uniqueness all keep working against lowercase.
+  return <span className={`rounded-lg px-2 py-0.5 text-xs capitalize ${colour}`}>{name}</span>;
 }
