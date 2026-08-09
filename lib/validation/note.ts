@@ -1,7 +1,9 @@
 import { z } from "zod";
 
-const titleField = z.string().trim().min(1).max(200);
-const bodyField = z.string().max(10000);
+// Custom messages replace zod's defaults (e.g. "Too small: expected string
+// to have >=1 characters") with plain language a user would actually read.
+const titleField = z.string().trim().min(1, "Title is required.").max(200, "Title must be 200 characters or fewer.");
+const bodyField = z.string().max(10000, "Note is too long — 10,000 characters max.");
 
 // The ids of tags to attach — validated for shape only. Ownership (does
 // each id actually belong to this user?) is a database question, checked

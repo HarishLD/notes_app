@@ -39,9 +39,9 @@ export function SignupForm(): React.JSX.Element {
       const body: unknown = await res.json();
       if (isClientErrorBody(body)) {
         setFieldErrors(body.fields ?? {});
-        setFormError(body.error ?? "Something went wrong");
+        setFormError(body.error ?? "Something went wrong. Please try again.");
       } else {
-        setFormError("Something went wrong");
+        setFormError("Something went wrong. Please try again.");
       }
     } catch {
       setFormError("Something went wrong. Check your connection and try again.");

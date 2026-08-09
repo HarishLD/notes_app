@@ -67,7 +67,7 @@ export function NoteForm({
     // this component only needs to stop showing its own pending state.
     if (!result.ok) {
       setFieldErrors(result.fields ?? {});
-      setFormError(result.error ?? "Something went wrong");
+      setFormError(result.error ?? "Something went wrong. Please try again.");
     }
     setIsPending(false);
   }

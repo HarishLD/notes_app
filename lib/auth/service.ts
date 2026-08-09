@@ -33,7 +33,7 @@ export async function registerUser(email: string, password: string): Promise<Ses
     // here — converting it to a typed, client-facing error is a deliberate
     // outcome change, not a blanket catch-and-rethrow.
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-      throw new ConflictError("Email already registered");
+      throw new ConflictError("An account with this email already exists. Try signing in instead.");
     }
     throw err;
   }
@@ -49,8 +49,11 @@ export async function authenticateUser(email: string, password: string): Promise
   // timing doesn't reveal which emails are registered.
   const isValid = await verifyPassword(password, user?.passwordHash ?? DUMMY_PASSWORD_HASH);
 
+  // One throw for both branches, one message — an unknown email and a wrong
+  // password must stay indistinguishable, so there is deliberately nowhere
+  // here to say which one happened.
   if (!user || !isValid) {
-    throw new UnauthorizedError();
+    throw new UnauthorizedError("Invalid email or password.");
   }
 
   return { id: user.id, email: user.email, createdAt: user.createdAt };

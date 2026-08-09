@@ -47,7 +47,7 @@ export async function getNote(userId: string, noteId: string): Promise<NoteWithT
     include: WITH_TAGS,
   });
   if (!note) {
-    throw new NotFoundError();
+    throw new NotFoundError("This note doesn't exist or has already been deleted.");
   }
   return toNoteWithTags(note);
 }
@@ -75,7 +75,7 @@ export async function updateNote(userId: string, noteId: string, data: UpdateNot
     },
   });
   if (result.count === 0) {
-    throw new NotFoundError();
+    throw new NotFoundError("This note doesn't exist or has already been deleted.");
   }
   // updateMany doesn't return the row itself; re-read it the same
   // ownership-scoped way every other read in this file does.
@@ -87,6 +87,6 @@ export async function deleteNote(userId: string, noteId: string): Promise<void> 
     where: { id: noteId, userId },
   });
   if (result.count === 0) {
-    throw new NotFoundError();
+    throw new NotFoundError("This note doesn't exist or has already been deleted.");
   }
 }

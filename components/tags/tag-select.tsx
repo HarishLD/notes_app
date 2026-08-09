@@ -49,10 +49,11 @@ export function TagSelect({
         setNewTagName("");
       } else {
         const body: unknown = await res.json();
-        setCreateError(isClientErrorBody(body) ? (body.error ?? "Couldn't create tag") : "Couldn't create tag");
+        const fallback = "Couldn't create the tag. Please try again.";
+        setCreateError(isClientErrorBody(body) ? (body.error ?? fallback) : fallback);
       }
     } catch {
-      setCreateError("Couldn't create tag. Check your connection and try again.");
+      setCreateError("Couldn't create the tag. Check your connection and try again.");
     } finally {
       setIsCreating(false);
     }

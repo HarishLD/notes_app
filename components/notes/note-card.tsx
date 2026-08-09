@@ -69,7 +69,8 @@ export function NoteCard({ note, availableTags }: NoteCardProps): React.JSX.Elem
       }
 
       const body: unknown = await res.json();
-      setDeleteError(isClientErrorBody(body) ? (body.error ?? "Something went wrong") : "Something went wrong");
+      const fallback = "Something went wrong. Please try again.";
+      setDeleteError(isClientErrorBody(body) ? (body.error ?? fallback) : fallback);
     } catch {
       setDeleteError("Something went wrong. Check your connection and try again.");
     } finally {

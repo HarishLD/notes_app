@@ -11,12 +11,15 @@ export class AppError extends Error {
 
 export class ValidationError extends AppError {
   constructor(readonly fields: Record<string, string[]>) {
-    super("Invalid input", 400, "VALIDATION_ERROR");
+    super("Please check your input and try again.", 400, "VALIDATION_ERROR");
   }
 }
 export class UnauthorizedError extends AppError {
-  constructor() {
-    super("Not authenticated", 401, "UNAUTHORIZED");
+  // Covers an expired/invalid/missing session (jwt.ts, session.ts) — the
+  // one caller with a different story, a failed signin, passes its own
+  // message rather than branching in the UI on which case this is.
+  constructor(message = "Your session has expired. Please sign in again.") {
+    super(message, 401, "UNAUTHORIZED");
   }
 }
 export class ForbiddenError extends AppError {

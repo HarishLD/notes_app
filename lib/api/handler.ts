@@ -13,7 +13,10 @@ export function toErrorResponse(err: unknown): NextResponse {
   }
   // Unknown failure: log the detail server-side, tell the client nothing.
   console.error("[unhandled]", err);
-  return NextResponse.json({ error: "Something went wrong", code: "INTERNAL_ERROR" }, { status: 500 });
+  return NextResponse.json(
+    { error: "Something went wrong on our end. Please try again in a moment.", code: "INTERNAL_ERROR" },
+    { status: 500 },
+  );
 }
 
 export function route<Ctx = unknown>(

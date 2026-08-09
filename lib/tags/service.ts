@@ -14,7 +14,7 @@ export async function createTag(userId: string, name: string): Promise<Tag> {
     // expected failure mode here — converting it to a typed, client-facing
     // error is a deliberate outcome change, not a blanket catch-and-rethrow.
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-      throw new ConflictError("Tag already exists");
+      throw new ConflictError("You already have a tag with this name.");
     }
     throw err;
   }
@@ -30,13 +30,13 @@ export async function setNoteTags(userId: string, noteId: string, tagIds: string
   await prisma.$transaction(async (tx) => {
     const note = await tx.note.findFirst({ where: { id: noteId, userId } });
     if (!note) {
-      throw new NotFoundError();
+      throw new NotFoundError("This note doesn't exist or has already been deleted.");
     }
 
     if (tagIds.length > 0) {
       const ownedTagCount = await tx.tag.count({ where: { id: { in: tagIds }, userId } });
       if (ownedTagCount !== tagIds.length) {
-        throw new NotFoundError();
+        throw new NotFoundError("One or more selected tags don't exist.");
       }
     }
 
