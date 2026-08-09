@@ -120,9 +120,23 @@ export function NoteCard({ note, availableTags }: NoteCardProps): React.JSX.Elem
         >
           Edit
         </button>
-        {isConfirmingDelete ? (
-          <>
-            <p className="text-sm text-zinc-700 dark:text-zinc-300">Delete this note?</p>
+        {isConfirmingDelete ? null : (
+          <button
+            type="button"
+            onClick={() => setIsConfirmingDelete(true)}
+            className="rounded-lg border border-red-300 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
+          >
+            Delete
+          </button>
+        )}
+      </div>
+      {isConfirmingDelete ? (
+        // A distinct row, not more buttons jammed next to Edit — the
+        // border/background sets this apart as a confirmation step the
+        // eye can't miss on the way to a destructive action.
+        <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-900 dark:bg-red-950">
+          <p className="text-sm font-medium text-red-800 dark:text-red-300">Delete this note?</p>
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={handleDelete}
@@ -136,21 +150,13 @@ export function NoteCard({ note, availableTags }: NoteCardProps): React.JSX.Elem
               type="button"
               onClick={() => setIsConfirmingDelete(false)}
               disabled={isDeleting}
-              className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-white disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-700"
+              className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
             >
               Cancel
             </button>
-          </>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setIsConfirmingDelete(true)}
-            className="rounded-lg border border-red-300 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
-          >
-            Delete
-          </button>
-        )}
-      </div>
+          </div>
+        </div>
+      ) : null}
       {deleteError ? (
         <p aria-live="polite" className="mt-2 text-sm text-red-600 dark:text-red-400">
           {deleteError}
