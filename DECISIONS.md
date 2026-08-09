@@ -265,3 +265,21 @@ Add an entry the moment you make a choice — not at the end of the phase. This 
 ## No modal focus-trap requirement to satisfy — no modals exist
 **Why:** Phase 8 chose inline editing and an inline two-step delete confirmation over modals specifically to avoid the focus-trap/Escape/return-focus implementation burden (see that phase's decisions). Phase 12's modal requirement is genuinely not applicable, not silently skipped — noted here so it's clear the omission was checked, not missed.
 **Alternative:** N/A.
+
+## Tag chip colour is a deterministic hash of the tag name, not stored or random
+**Why:** The same tag needed to render identically everywhere it appears (note cards across the list, in both the light/dark palettes) without adding a `colour` column or picking one at creation time. A `djb2` string hash of the tag name, indexed into a fixed 8-entry palette, is pure and deterministic — same input, same output, on every render, with no state and no migration. `Math.random()` was rejected outright since it would repaint the same tag a different colour on every re-render. Colour stays decorative only: the tag name is still the text content, so nothing (including screen readers) depends on which palette entry was picked.
+**Palette (each pair computed via the relative-luminance formula, not eyeballed — light: `bg-*-100`/`text-*-800`, dark: `bg-*-900`/`text-*-300`, solid, no opacity modifiers):**
+
+| Colour | Light contrast | Dark contrast |
+|---|---|---|
+| rose | 6.68:1 | 5.06:1 |
+| orange | 6.38:1 | 5.56:1 |
+| amber | 6.37:1 | 6.29:1 |
+| lime | 6.52:1 | 6.69:1 |
+| emerald | 6.78:1 | 6.38:1 |
+| teal | 6.73:1 | 6.41:1 |
+| cyan | 6.49:1 | 6.29:1 |
+| fuchsia | 7.08:1 | 5.70:1 |
+
+Indigo, violet, blue, and purple are excluded entirely — indigo is the app's one interactive accent (buttons, focus rings, checkboxes), and a tag chip in that hue would read as clickable when it isn't. Confirmed the built CSS actually contains every palette class (`grep` against `.next/static/chunks/*.css`) since Tailwind's scanner reads the array as literal text, not a runtime-evaluated one — the array entries are full class strings for exactly that reason, not string-interpolated fragments Tailwind couldn't statically find.
+**Alternative:** Storing a `colour` column on `Tag` would let a user pick their own colour, but that's a feature this app doesn't offer and would need a migration, a form control, and a "no colour set yet" fallback — the hash gets the "always the same colour" requirement with none of that.
