@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { withUpdatedParam } from "@/components/notes/url-params";
+import { useNotesTransition } from "@/components/notes/notes-transition-context";
 import type { Tag } from "@/lib/generated/prisma/client";
 
 type TagFilterProps = {
@@ -15,6 +16,7 @@ export function TagFilter({ tags }: TagFilterProps): React.JSX.Element {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { startTransition } = useNotesTransition();
   const selectedIds = new Set((searchParams.get("tags") ?? "").split(",").filter(Boolean));
 
   function handleToggle(tagId: string, checked: boolean): void {
@@ -25,7 +27,9 @@ export function TagFilter({ tags }: TagFilterProps): React.JSX.Element {
       next.delete(tagId);
     }
     const qs = withUpdatedParam(searchParams, "tags", next.size > 0 ? Array.from(next).join(",") : null);
-    router.push(qs ? `${pathname}?${qs}` : pathname);
+    startTransition(() => {
+      router.push(qs ? `${pathname}?${qs}` : pathname);
+    });
   }
 
   return (

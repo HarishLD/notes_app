@@ -6,6 +6,8 @@ import { listNotes } from "@/lib/notes/service";
 import { listTags } from "@/lib/tags/service";
 import { noteQuerySchema } from "@/lib/validation/note";
 import { NoteList } from "@/components/notes/note-list";
+import { NoteListRegion } from "@/components/notes/note-list-region";
+import { NotesTransitionProvider } from "@/components/notes/notes-transition-context";
 import { CreateNoteForm } from "@/components/notes/create-note-form";
 import { SortSelect } from "@/components/notes/sort-select";
 import { SearchInput } from "@/components/notes/search-input";
@@ -56,15 +58,19 @@ export default async function NotesPage({ searchParams }: PageProps<"/notes">): 
           needs an opaque surface under it. */}
       <div className="flex flex-col gap-6 rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900 sm:p-8">
         <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Notes</h1>
-        <div className="flex flex-col gap-4 border-b border-zinc-200 pb-6 dark:border-zinc-800">
-          <div className="flex flex-wrap items-center gap-4">
-            <SearchInput />
-            <SortSelect />
+        <NotesTransitionProvider>
+          <div className="flex flex-col gap-4 border-b border-zinc-200 pb-6 dark:border-zinc-800">
+            <div className="flex flex-wrap items-center gap-4">
+              <SearchInput />
+              <SortSelect />
+            </div>
+            <TagFilter tags={tags} />
           </div>
-          <TagFilter tags={tags} />
-        </div>
-        <CreateNoteForm availableTags={tags} />
-        <NoteList notes={notes} availableTags={tags} hasActiveFilters={hasActiveFilters} />
+          <CreateNoteForm availableTags={tags} />
+          <NoteListRegion>
+            <NoteList notes={notes} availableTags={tags} hasActiveFilters={hasActiveFilters} />
+          </NoteListRegion>
+        </NotesTransitionProvider>
       </div>
     </main>
   );

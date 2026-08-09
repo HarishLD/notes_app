@@ -3,17 +3,24 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { withUpdatedParam } from "@/components/notes/url-params";
+import { useNotesTransition } from "@/components/notes/notes-transition-context";
 
 export function SearchInput(): React.JSX.Element {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { startTransition } = useNotesTransition();
   const [value, setValue] = useState(searchParams.get("q") ?? "");
 
   function handleSubmit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
     const qs = withUpdatedParam(searchParams, "q", value.trim() || null);
-    router.push(qs ? `${pathname}?${qs}` : pathname);
+    // The input itself stays enabled throughout — only the navigation this
+    // triggers is deferred, so keystrokes typed during the round-trip are
+    // never dropped.
+    startTransition(() => {
+      router.push(qs ? `${pathname}?${qs}` : pathname);
+    });
   }
 
   return (

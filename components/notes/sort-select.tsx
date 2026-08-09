@@ -3,18 +3,22 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { ChangeEvent } from "react";
 import { withUpdatedParam } from "@/components/notes/url-params";
+import { useNotesTransition } from "@/components/notes/notes-transition-context";
 
 export function SortSelect(): React.JSX.Element {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { startTransition } = useNotesTransition();
   const currentSort = searchParams.get("sort") === "oldest" ? "oldest" : "newest";
 
   function handleChange(event: ChangeEvent<HTMLSelectElement>): void {
     // "newest" is the default — omit it from the URL so an unfiltered view
     // has a clean address instead of always carrying ?sort=newest.
     const qs = withUpdatedParam(searchParams, "sort", event.target.value === "newest" ? null : event.target.value);
-    router.push(qs ? `${pathname}?${qs}` : pathname);
+    startTransition(() => {
+      router.push(qs ? `${pathname}?${qs}` : pathname);
+    });
   }
 
   return (
